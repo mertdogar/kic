@@ -32,6 +32,14 @@ class Operator {
         }
 
         await this.comm.broadcast('newblockchain', await this.blockchain.toJSONAsync());
+
+        const transactions = await this.getTransactions();
+
+        await Async.eachSeries(transactions, t => {
+            return this.blockchain.addTransaction(t).catch(err => {/* Silence */});
+        });
+
+        await this.comm.broadcast('synctransactions', await this.blockchain.getPendingTransactions(-1));
     }
 
 
@@ -50,6 +58,25 @@ class Operator {
         return blockchains;
     }
 
+    async getTransactions() {
+        const peerIds = await this.comm.getPeers();
+
+        const peerTransactions = (await Async.mapLimit(peerIds, 3, peerId => {
+            return this.comm.askPeer(peerId, 'gettransactions')
+                .catch(err => {
+                    debug(`Error fetching block chain of peer ${peerId}`, err);
+                });
+        }))
+        .filter(x => x); //[[t1, t2], [t1, t2, t3]]
+
+        const transactions = _.chain(peerTransactions)
+            .flatten()
+            .uniqBy('id')
+            .value();
+
+        return transactions;
+    }
+
     bindEvents() {
         this.blockchain.on('newblock', block => this.comm.broadcast('newblock', block));
         this.blockchain.on('newtransaction', t => this.comm.broadcast('newtransaction', t));
@@ -65,6 +92,11 @@ class Operator {
                 for (let i = 1; i < chainlength; i++)
                     await this.blockchain.addBlock(blocks[i]);
             }
+        });
+
+        this.comm.on('synctransactions', async (transactions) => {
+            for (let i = 0; i < transactions.length; i++)
+                await this.blockchain.addTransaction(transactions[i]).catch(err => {/* Silence */});
         });
 
         this.comm.on('newblock', blockData => {

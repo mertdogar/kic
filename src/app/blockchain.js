@@ -162,8 +162,8 @@ class BlockChain extends EventEmitterExtra {
         return Object.keys(this.transactionDB.hashes).length;
     }
 
-    async getPendingTransactions() {
-        return this.transactionDB.getAll(config.BLOCK_TRANSACTION_COUNT);
+    async getPendingTransactions(limit = config.BLOCK_TRANSACTION_COUNT) {
+        return this.transactionDB.getAll(limit);
     }
 
     async resetBlocks() {
