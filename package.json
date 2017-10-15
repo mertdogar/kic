@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/mertdogar/kic#readme",
   "dependencies": {
+    "async-q": "0.3.1",
     "debug": "3.1.0",
     "event-emitter-extra": "0.1.7",
     "leveldown": "2.0.0",

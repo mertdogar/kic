@@ -1,5 +1,6 @@
 const debug = require('debug')('kic:blockchain');
 const EventEmitterExtra = require('event-emitter-extra');
+const sortBy = require('lodash/sortBy');
 const Block = require('./block');
 const Transaction = require('./transaction');
 const TransactionDB = require('./transactiondb');
@@ -30,13 +31,55 @@ class BlockChain extends EventEmitterExtra {
     }
 
     difficulty(index) {
+        return BlockChain.difficulty(index || this.size);
+    }
+
+    static difficulty(index) {
         return Math.max(
             Math.floor(
                 Number.MAX_SAFE_INTEGER / Math.pow(
-                    Math.floor(((index || this.size) + 20) / 5) + 1
+                    Math.floor((index + 20) / 5) + 1
                     , 5)
             )
         , 0);
+    }
+
+    async toJSONAsync() {
+        return {
+            blocks: sortBy(await this.blockDB.getAll(), 'index')
+        };
+    }
+
+    // { blocks: [{}] } -> {chainlength, verified, blocks}
+    static verifyBlockChain(rawBlockChain) {
+        const chainlength = rawBlockChain.blocks.length;
+        let verified = true;
+        const blocks = rawBlockChain.blocks.map(data => {
+            try {
+                return new Block(data);
+            } catch (err) {
+                debug(`Invalid block data, rejecting ${data}`);
+                verified = false;
+            }
+        });
+
+        if (!verified) return {verified};
+        if (chainlength < 2) return {verified: false};
+        if (blocks[0].hash != Block.Genesis.hash) return {verified: false};
+
+        for (let i = 1; i < chainlength; i++) {
+            if (blocks[i].difficulty > BlockChain.difficulty(blocks[i].index)) {
+                verified = false;
+                break;
+            }
+
+            if (blocks[i].previousHash != blocks[i - 1].hash) {
+                verified = false;
+                break;
+            }
+        }
+
+        return {chainlength, blocks: rawBlockChain.blocks, verified};
     }
 
     async init() {
@@ -120,6 +163,11 @@ class BlockChain extends EventEmitterExtra {
 
     async getPendingTransactions() {
         return this.transactionDB.getAll(config.BLOCK_TRANSACTION_COUNT);
+    }
+
+    async resetBlocks() {
+        await this.blockDB.reset();
+        await this.init();
     }
 }
 

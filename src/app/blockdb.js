@@ -81,6 +81,26 @@ class BlockDB {
         });
     }
 
+    async getAll(limit = -1) {
+        const stream = this.db.createReadStream({keys: true, values: true, fillCache: true, limit});
+        const blocks = [];
+
+        return new Promise((resolve, reject) => {
+            stream.on('data', ({key, value}) => {
+                try {
+                    const block = JSON.parse(value.toString());
+                    blocks.push(block);
+                } catch (err) {
+                    stream.destroy();
+                    reject(err);
+                }
+            });
+
+            stream.on('error', reject);
+            stream.on('end', () => resolve(blocks));
+        });
+    }
+
     async insert (block) {
         if (!(block instanceof Block))
             throw new Error(`Insertion refused. Can insert only Block instances`);
@@ -91,7 +111,18 @@ class BlockDB {
         } catch (err) {
             throw new Error(`Insertaion failed. Block ${block.index}`);
         }
+    }
 
+    async remove (indexes) {
+        if (!Array.isArray(indexes)) indexes = [indexes];
+
+        const ops = indexes.map(index => ({type: 'del', key: index}));
+        await this.db.batch(ops);
+        this.hashes = omitBy(this.hashes, (index, hash) => indexes.indexOf(index) != -1);
+    }
+
+    async removeAll () {
+        return this.remove(map(this.hashes));
     }
 }
 

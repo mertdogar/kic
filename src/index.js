@@ -2,19 +2,20 @@ const debug = require('debug')('kic:index');
 const config = require('./config.json');
 const BlockChain = require('./app/blockchain');
 const Miner = require('./app/miner');
-const Comm = require('./app/comm');
+const Operator = require('./app/operator');
 const crypto = require('./lib/crypto');
 const range = require('lodash/range');
 
 async function init() {
     const blockchain = new BlockChain(config.DB_ROOT);
 
-    // const comm = new Comm();
     await blockchain.init();
-    // await comm.init();
 
     debug(`Block size = ${blockchain.size}`);
     debug(`Pending transactions = ${blockchain.pendingTransactionCount}`);
+
+    const operator = new Operator(blockchain);
+    await operator.init();
 
 
     const miner = new Miner(blockchain);
@@ -42,4 +43,7 @@ async function init() {
     //console.log('result', blockchain);
 }
 
-init();
+init()
+    .catch(err => {
+        console.log(err);
+    });

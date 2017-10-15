@@ -1,33 +1,52 @@
-const Comm = require('./comm');
+const CommModule = require('../lib/comm-line');
+const debug = require('debug')('kic:operator');
+const Async = require('async-q');
 const BlockChain = require('./blockchain');
-const Transaction = require('./transaction');
-const TransactionDB = require('./transactiondb');
 
 class Operator {
-    constructor() {
-        this.blockchain = new BlockChain('kic-db');
-        this.comm = new Comm();
-        this.transactionDB = new TransactionDB();
+    constructor(blockchain) {
+        this.blockchain = blockchain;
+        this.comm = new CommModule();
     }
 
     async init() {
         await this.comm.init();
-        await this.blockchain.init();
-
         this.bindEvents();
+
+        const blockchains = await this.getBlockChains();
+        console.log('blockchains', blockchains);
+    }
+
+
+    async getBlockChains() {
+        const peerIds = await this.comm.getPeers();
+
+        const blockchains = (await Async.mapLimit(peerIds, 3, peerId => {
+            return this.comm.askPeer(peerId, 'getblockchain')
+                .catch(err => {
+                    debug(`Error fetching block chain of peer ${peerId}`, err);
+                });
+        }))
+        .filter(x => x)
+        .map(raw => BlockChain.verifyBlockChain(raw));
+
+        return blockchains;
     }
 
     bindEvents() {
-        this.blockchain.on('newblock', block => {
-            this.comm.announceNewBlock(block);
-            //kill miners?
+        this.blockchain.on('newblock', block => this.comm.broadcast('newblock', block));
+        this.blockchain.on('newtransaction', t => this.comm.broadcast('newtransaction', t));
+
+        this.comm.on('newblock', blockData => this.blockchain.addBlock(blockData));
+        this.comm.on('newtransaction', tData => this.blockchain.addTransaction(tData));
+        this.comm.onPeerMessage(async ({peerId, data}, done) => {
+            if (data == 'getblockchain') {
+                return done(null, await this.blockchain.toJSONAsync());
+            } else {
+                console.log(`Unknown peer message type ${data} from ${peerId}`)
+                return done(new Error('Unknown command'));
+            }
         });
-
-        comm.onNewBlock(blockData => this.blockchain.addBlock(blockData));
-
-        this.blockchain.on('newtransaction', t => this.comm.announceNewBlock(block));
-
-        comm.onNewTransaction(tData => this.blockchain.addTransaction(tData));
     }
 }
 

@@ -3,7 +3,7 @@
     "BLOCK_TRANSACTION_COUNT": 10,
     "MINER_COUNT": 1,
     "LINE_SERVER": {
-        "PORT": 3001,
-        "HOST": "localhost"
+        "PORT": 3000,
+        "HOST": "192.168.1.24"
     }
 }
