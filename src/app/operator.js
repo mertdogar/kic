@@ -14,7 +14,6 @@ class Operator {
         this.bindEvents();
 
         const blockchains = await this.getBlockChains();
-        console.log('blockchains', blockchains);
     }
 
 

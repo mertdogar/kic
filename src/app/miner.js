@@ -53,8 +53,6 @@ class Miner {
             transactions: transactions
         };
 
-        console.log('last block', lastBlock);
-
         const minerPromises = range(this.count).map(index => {
             const miner = spawn(mineFunction);
             this.miners.push(miner);

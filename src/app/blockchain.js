@@ -103,7 +103,7 @@ class BlockChain extends EventEmitterExtra {
 
     async addBlock(raw) {
         const lastBlock = this.lastBlock;
-        console.log('add compare', lastBlock, raw);
+
         const newBlock = new Block(raw);
 
         if (!raw.hash)
