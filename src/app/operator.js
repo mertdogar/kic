@@ -24,12 +24,14 @@ class Operator {
         console.log('Peer chains', blockchains.map(({chainlength, verified}) => ({chainlength, verified})));
 
         if (bestChain && bestChain.chainlength > this.blockchain.size) {
-            debug(`Replacing blockchain with something with length ${bestChain.length}`);
+            debug(`Replacing blockchain with something with length ${bestChain.chainlength}`);
 
             await this.blockchain.resetBlocks();
             for (let i = 1; i < bestChain.chainlength; i++)
                 await this.blockchain.addBlock(bestChain.blocks[i]);
         }
+
+        await this.comm.broadcast('newblockchain', await this.blockchain.toJSONAsync());
     }
 
 
@@ -51,6 +53,19 @@ class Operator {
     bindEvents() {
         this.blockchain.on('newblock', block => this.comm.broadcast('newblock', block));
         this.blockchain.on('newtransaction', t => this.comm.broadcast('newtransaction', t));
+
+        this.comm.on('newblockchain', async (blockChainData) => {
+            const {chainlength, blocks, verified} = BlockChain.verifyBlockChain(blockChainData);
+            if (!verified) return;
+
+            if (chainlength > this.blockchain.size) {
+                debug(`Replacing blockchain with something with length ${chainlength}`);
+
+                await this.blockchain.resetBlocks();
+                for (let i = 1; i < chainlength; i++)
+                    await this.blockchain.addBlock(blocks[i]);
+            }
+        });
 
         this.comm.on('newblock', blockData => {
             this.blockchain.addBlock(blockData).catch(err => {/* Silence */});
