@@ -37,8 +37,14 @@ class Operator {
         this.blockchain.on('newblock', block => this.comm.broadcast('newblock', block));
         this.blockchain.on('newtransaction', t => this.comm.broadcast('newtransaction', t));
 
-        this.comm.on('newblock', blockData => this.blockchain.addBlock(blockData));
-        this.comm.on('newtransaction', tData => this.blockchain.addTransaction(tData));
+        this.comm.on('newblock', blockData => {
+            this.blockchain.addBlock(blockData).catch(err => {/* Silence */});
+        });
+
+        this.comm.on('newtransaction', tData => {
+            this.blockchain.addTransaction(tData).catch(err => {/* Silence */});
+        });
+
         this.comm.onPeerMessage(async ({peerId, data}, done) => {
             if (data == 'getblockchain') {
                 return done(null, await this.blockchain.toJSONAsync());
