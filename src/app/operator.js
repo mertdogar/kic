@@ -2,6 +2,7 @@ const CommModule = require('../lib/comm-line');
 const debug = require('debug')('kic:operator');
 const Async = require('async-q');
 const BlockChain = require('./blockchain');
+const _ = require('lodash');
 
 class Operator {
     constructor(blockchain) {
@@ -14,6 +15,21 @@ class Operator {
         this.bindEvents();
 
         const blockchains = await this.getBlockChains();
+        const bestChain = _.chain(blockchains)
+            .filter('verified')
+            .sort('chainlength')
+            .last()
+            .value();
+
+        console.log('Peer chains', blockchains.map(({chainlength, verified}) => ({chainlength, verified})));
+
+        if (bestChain && bestChain.chainlength > this.blockchain.size) {
+            debug(`Replacing blockchain with something with length ${bestChain.length}`);
+
+            await this.blockchain.resetBlocks();
+            for (let i = 1; i < bestChain.chainlength; i++)
+                await this.blockchain.addBlock(bestChain.blocks[i]);
+        }
     }
 
 

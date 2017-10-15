@@ -1,5 +1,7 @@
 const levelup = require('levelup');
 const leveldown = require('leveldown');
+const map = require('lodash/map');
+const omitBy = require('lodash/omitBy');
 const Block = require('./block');
 
 

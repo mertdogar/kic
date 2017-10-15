@@ -64,6 +64,7 @@ class BlockChain extends EventEmitterExtra {
         });
 
         if (!verified) return {verified};
+        if (chainlength == 1 && blocks[0].hash == Block.Genesis.hash) return {verified: true, blocks, chainlength: 1};
         if (chainlength < 2) return {verified: false};
         if (blocks[0].hash != Block.Genesis.hash) return {verified: false};
 
@@ -151,7 +152,7 @@ class BlockChain extends EventEmitterExtra {
         if (duplicateTransaction)
             throw new Error(`Transaction insert failed. Trans-${newTransaction.id} is already in blockchain`);
 
-        debug(`Adding transaction ${newTransaction.id}`);
+        debug(`Adding transaction ${newTransaction.id} ${JSON.stringify(newTransaction.data)}`);
         await this.transactionDB.insert(newTransaction);
 
         this.emit('newtransaction', newTransaction);
@@ -166,8 +167,9 @@ class BlockChain extends EventEmitterExtra {
     }
 
     async resetBlocks() {
-        await this.blockDB.reset();
-        await this.init();
+        await this.blockDB.removeAll();
+        debug('Adding genesis block...');
+        await this.blockDB.insert(Block.Genesis);
     }
 }
 
