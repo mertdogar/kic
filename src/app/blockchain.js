@@ -174,6 +174,7 @@ class BlockChain extends EventEmitterExtra {
         await this.blockDB.removeAll();
         debug('Adding genesis block...');
         await this.blockDB.insert(Block.Genesis);
+        this.lastBlock = await this.blockDB.get(this.size - 1);
     }
 }
 
