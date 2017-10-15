@@ -16,6 +16,10 @@ class BlockChain extends EventEmitterExtra {
     constructor (dbPath) {
         super();
         this.dbPath = dbPath;
+
+        setInterval(_ => {
+            debug(`< Chain length = ${this.size}, Pending transactions = ${this.pendingTransactionCount}, Last block hash = ${this.lastBlock.hash} >`);
+        }, 1000);
     }
 
     get size() {
