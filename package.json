@@ -1,0 +1,31 @@
+{
+  "name": "kic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "stun": "node stun/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mertdogar/kic.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mertdogar/kic/issues"
+  },
+  "homepage": "https://github.com/mertdogar/kic#readme",
+  "dependencies": {
+    "debug": "3.1.0",
+    "event-emitter-extra": "0.1.7",
+    "leveldown": "2.0.0",
+    "levelup": "2.0.0",
+    "line-socket": "1.0.0",
+    "lodash": "4.17.4",
+    "mkdirp": "0.5.1",
+    "mkdirp-promise": "5.0.1",
+    "threads": "0.8.1"
+  }
+}

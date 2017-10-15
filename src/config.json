@@ -1,0 +1,9 @@
+{
+    "DB_ROOT": "kic-db",
+    "BLOCK_TRANSACTION_COUNT": 10,
+    "MINER_COUNT": 1,
+    "LINE_SERVER": {
+        "PORT": 3001,
+        "HOST": "localhost"
+    }
+}
