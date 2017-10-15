@@ -110,6 +110,8 @@ class Operator {
         this.comm.onPeerMessage(async ({peerId, data}, done) => {
             if (data == 'getblockchain') {
                 return done(null, await this.blockchain.toJSONAsync());
+            } else if (data == 'gettransactions') {
+                return done(null, await this.blockchain.getPendingTransactions(-1));
             } else {
                 console.log(`Unknown peer message type ${data} from ${peerId}`)
                 return done(new Error('Unknown command'));
